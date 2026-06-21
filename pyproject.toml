@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ern-relics-helper"
+version = "0.1.0"
+description = "Workflow tools for managing Elden Ring Nightreign relics."
+requires-python = ">=3.10"
+dependencies = [
+    "openpyxl>=3.1",
+]
+
+[project.scripts]
+ern-relics = "ern_relics_helper.cli:main"
+
