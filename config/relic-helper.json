@@ -1,0 +1,61 @@
+{
+  "game": {
+    "process_name": "",
+    "window_title": "黑夜君臨"
+  },
+  "ocr": {
+    "tesseract_cmd": "E:\\Tesseract-OCR\\tesseract.exe",
+    "language": "chi_tra+eng",
+    "psm": 6
+  },
+  "regions": {
+    "relic_kind": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "relic_terms": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "relic_grid": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    },
+    "keep_marker": {
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  "marker_detection": {
+    "enabled": false,
+    "rgb": [
+      255,
+      255,
+      255
+    ],
+    "tolerance": 32,
+    "minimum_ratio": 0.02
+  },
+  "actions": {
+    "move_next": [],
+    "toggle_keep": [],
+    "delete_relic": []
+  },
+  "scan": {
+    "max_relics": 0,
+    "delay_seconds": 0.15,
+    "stop_on_duplicate": true,
+    "move_after_delete": false
+  },
+  "scoring": {
+    "keep_threshold": 0.5
+  }
+}

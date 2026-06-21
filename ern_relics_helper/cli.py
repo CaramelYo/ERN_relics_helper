@@ -9,6 +9,7 @@ from .config import load_config, write_default_config
 from .evaluator import clear_keep_marks, evaluate_relics
 from .excel_io import read_relics, write_relic_template, write_relics
 from .terms import load_term_rules, write_term_rules
+from .win32_api import capture_window_region, find_window_by_title, list_windows
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,6 +52,15 @@ def build_parser() -> argparse.ArgumentParser:
     clear_marks.add_argument("--output", default="outputs/evaluation/移除保留標記後.xlsx")
     clear_marks.set_defaults(func=cmd_clear_marks_file)
 
+    windows = subparsers.add_parser("list-windows", help="列出可見視窗，供設定遊戲視窗標題")
+    windows.set_defaults(func=cmd_list_windows)
+
+    capture = subparsers.add_parser("capture-region", help="依設定檔截圖指定遊戲畫面區域")
+    capture.add_argument("--config", default="config/relic-helper.json")
+    capture.add_argument("--region", required=True, choices=["relic_kind", "relic_terms", "relic_grid", "keep_marker"])
+    capture.add_argument("--output", required=True)
+    capture.set_defaults(func=cmd_capture_region)
+
     for name, help_text, func in [
         ("scan-game", "整理當前遊戲遺物並匯出 Excel", cmd_scan_game),
         ("apply-keep", "依 Excel 在遊戲中保留特定遺物", cmd_apply_keep),
@@ -62,8 +72,14 @@ def build_parser() -> argparse.ArgumentParser:
         command.set_defaults(func=func)
         if name == "scan-game":
             command.add_argument("--output", default="outputs/scan/當前遺物清單.xlsx")
+            command.add_argument("--terms", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
         if name == "apply-keep":
             command.add_argument("--input", required=True)
+            command.add_argument("--terms", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
+            command.add_argument("--execute", action="store_true", help="實際送出保留按鍵；未指定時只掃描比對")
+        if name in {"delete-unkept", "clear-keeps-game"}:
+            command.add_argument("--terms", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
+            command.add_argument("--execute", action="store_true", help="實際送出遊戲操作；未指定時只掃描")
 
     return parser
 
@@ -111,31 +127,62 @@ def cmd_clear_marks_file(args) -> int:
     return 0
 
 
+def cmd_list_windows(_args) -> int:
+    for window in list_windows():
+        left, top, right, bottom = window.rect
+        print(f"{window.hwnd}\t{left},{top},{right-left}x{bottom-top}\t{window.title}")
+    return 0
+
+
+def cmd_capture_region(args) -> int:
+    config = load_config(args.config)
+    window = find_window_by_title(config.get("game", {}).get("window_title", ""))
+    image = capture_window_region(window, config.get("regions", {}).get(args.region, {}))
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output)
+    print(f"已儲存截圖：{output.resolve()}")
+    return 0
+
+
 def cmd_scan_game(args) -> int:
-    load_config(args.config)
-    adapter = GameAutomationAdapter()
+    config = load_config(args.config)
+    rules = load_term_rules(args.terms)
+    adapter = GameAutomationAdapter(config, known_terms=set(rules))
     relics = adapter.scan_current_relics()
     write_relics(args.output, relics)
+    print(f"已掃描 {len(relics)} 個遺物並匯出：{Path(args.output).resolve()}")
     return 0
 
 
 def cmd_apply_keep(args) -> int:
-    load_config(args.config)
+    config = load_config(args.config)
+    rules = load_term_rules(args.terms)
     relics = read_relics(args.input)
-    GameAutomationAdapter().apply_keep_list(relics)
+    report = GameAutomationAdapter(config, known_terms=set(rules), execute=args.execute).apply_keep_list(relics)
+    print_report("保留特定遺物", report)
     return 0
 
 
 def cmd_delete_unkept(args) -> int:
-    load_config(args.config)
-    GameAutomationAdapter().delete_unkept()
+    config = load_config(args.config)
+    rules = load_term_rules(args.terms)
+    report = GameAutomationAdapter(config, known_terms=set(rules), execute=args.execute).delete_unkept()
+    print_report("刪除未保留遺物", report)
     return 0
 
 
 def cmd_clear_keeps_game(args) -> int:
-    load_config(args.config)
-    GameAutomationAdapter().clear_keep_marks()
+    config = load_config(args.config)
+    rules = load_term_rules(args.terms)
+    report = GameAutomationAdapter(config, known_terms=set(rules), execute=args.execute).clear_keep_marks()
+    print_report("移除保留標記", report)
     return 0
+
+
+def print_report(title: str, report) -> None:
+    mode = "實際執行" if not report.dry_run else "dry-run"
+    print(f"{title}完成：模式={mode}，掃描={report.scanned}，比對={report.matched}，動作={report.actions}")
 
 
 if __name__ == "__main__":

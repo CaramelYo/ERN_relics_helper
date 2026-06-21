@@ -14,6 +14,61 @@ python -m pip install -r requirements.txt
 python -m ern_relics_helper.cli init-config --output config/relic-helper.json
 ```
 
+## 設定遊戲視窗與區域
+
+列出目前可見視窗，找出遊戲視窗標題：
+
+```powershell
+python -m ern_relics_helper.cli list-windows
+```
+
+編輯 `config/relic-helper.json`：
+
+- `game.window_title`：遊戲視窗標題的一部分。
+- `ocr.tesseract_cmd`：Tesseract 執行檔路徑，例如 `C:\Program Files\Tesseract-OCR\tesseract.exe`。
+- `ocr.language`：OCR 語言，繁中建議 `chi_tra+eng`。
+- `scan.max_relics`：最多瀏覽幾個遺物，必須大於 `0`。
+- `regions.relic_kind`：遺物種類區域。
+- `regions.relic_terms`：遺物詞條區域。
+- `regions.keep_marker`：保留標記偵測區域。
+
+區域格式皆為相對遊戲視窗左上角的座標：
+
+```json
+{"x": 100, "y": 200, "width": 300, "height": 120}
+```
+
+可用以下命令截圖檢查區域是否正確：
+
+```powershell
+python -m ern_relics_helper.cli capture-region --config config/relic-helper.json --region relic_terms --output outputs/debug/relic_terms.png
+```
+
+## 設定遊戲操作
+
+`actions.move_next`、`actions.toggle_keep`、`actions.delete_relic` 都是動作序列。
+
+鍵盤範例：
+
+```json
+[
+  {"type": "key", "key": "RIGHT"},
+  {"type": "wait", "seconds": 0.1}
+]
+```
+
+滑鼠範例：
+
+```json
+[
+  {"type": "click", "x": 1200, "y": 720}
+]
+```
+
+`x`、`y` 是相對遊戲視窗左上角的位置。
+
+支援常見按鍵：`UP`、`DOWN`、`LEFT`、`RIGHT`、`ENTER`、`ESC`、`SPACE`、`TAB`、`DELETE`、`F1` 到 `F24`，以及單一英文字母或數字。
+
 ## 建立詞條對照表
 
 可從完整來源 Excel 抽出標準格式詞條表：
@@ -59,11 +114,45 @@ python -m ern_relics_helper.cli clear-marks-file --relics outputs/evaluation/所
 
 ## 遊戲操作入口
 
-以下命令已保留入口，但目前需要接入實際的畫面辨識與操作 adapter 後才會執行：
+以下命令會使用設定檔中的視窗、區域、OCR 與操作設定：
 
-- `scan-game`
-- `apply-keep`
-- `delete-unkept`
-- `clear-keeps-game`
+```powershell
+python -m ern_relics_helper.cli scan-game --config config/relic-helper.json --terms outputs/relic_terms_table/遺物詞條對照表.xlsx --output outputs/scan/當前遺物清單.xlsx
+```
 
-這些入口目前會明確回報尚未接入 adapter，避免在未設定完成時操作遊戲。
+保留特定遺物：
+
+```powershell
+python -m ern_relics_helper.cli apply-keep --config config/relic-helper.json --terms outputs/relic_terms_table/遺物詞條對照表.xlsx --input outputs/evaluation/新增保留遺物.xlsx --execute
+```
+
+刪除未保留遺物：
+
+```powershell
+python -m ern_relics_helper.cli delete-unkept --config config/relic-helper.json --terms outputs/relic_terms_table/遺物詞條對照表.xlsx --execute
+```
+
+移除所有保留標記：
+
+```powershell
+python -m ern_relics_helper.cli clear-keeps-game --config config/relic-helper.json --terms outputs/relic_terms_table/遺物詞條對照表.xlsx --execute
+```
+
+`apply-keep`、`delete-unkept`、`clear-keeps-game` 若未加 `--execute`，會執行掃描與比對，但不會送出保留、刪除或移除標記按鍵。
+
+## 保留標記偵測
+
+若要偵測保留標記，需設定：
+
+```json
+{
+  "marker_detection": {
+    "enabled": true,
+    "rgb": [255, 255, 255],
+    "tolerance": 32,
+    "minimum_ratio": 0.02
+  }
+}
+```
+
+程式會在 `regions.keep_marker` 中統計接近 `rgb` 的像素比例，高於 `minimum_ratio` 即視為有保留標記。
