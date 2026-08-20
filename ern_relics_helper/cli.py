@@ -30,10 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
     init_config.add_argument("--output", default="config/relic-helper.json")
     init_config.set_defaults(func=cmd_init_config)
 
-    build_terms = subparsers.add_parser("build-terms", help="從來源 Excel 建立標準遺物詞條對照表")
-    build_terms.add_argument("--source", required=True)
-    build_terms.add_argument("--output", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
-    build_terms.set_defaults(func=cmd_build_terms)
+    # no need
+    # build_terms = subparsers.add_parser("build-terms", help="從來源 Excel 建立標準遺物詞條對照表")
+    # build_terms.add_argument("--source", required=True)
+    # build_terms.add_argument("--output", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
+    # build_terms.set_defaults(func=cmd_build_terms)
 
     template = subparsers.add_parser("create-relic-template", help="建立 5.1.2 遺物清單 Excel 範本")
     template.add_argument("--output", default="outputs/scan/當前遺物清單.xlsx")
@@ -78,7 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
             command.add_argument("--terms", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
             command.add_argument("--execute", action="store_true", help="實際送出保留按鍵；未指定時只掃描比對")
         if name in {"delete-unkept", "clear-keeps-game"}:
-            command.add_argument("--terms", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
+            # command.add_argument("--terms", default="outputs/relic_terms_table/遺物詞條對照表.xlsx")
             command.add_argument("--execute", action="store_true", help="實際送出遊戲操作；未指定時只掃描")
 
     return parser

@@ -57,13 +57,14 @@ def parse_bool(value: object) -> bool:
 @dataclass(frozen=True)
 class TermRule:
     term: str
-    category: str = ""
+    # category: str = ""
     stack_state: str = ""
     logic_tags: tuple[str, ...] = ()
     score: float = 0.0
 
     def has_tag(self, *needles: str) -> bool:
-        haystack = " ".join((self.term, self.category, self.stack_state, *self.logic_tags))
+        # haystack = " ".join((self.term, self.category, self.stack_state, *self.logic_tags))
+        haystack = " ".join((self.term, self.stack_state, *self.logic_tags))
         return any(needle and needle in haystack for needle in needles)
 
 
@@ -71,12 +72,14 @@ class TermRule:
 class Relic:
     unique_id: str
     retained: bool = False
-    relic_type: str = ""
+    # relic_type: str = ""
     color: str = ""
     mode: str = ""
-    terms: tuple[str, ...] = ()
+    # terms: tuple[str, ...] = ()
+    terms: tuple[TermRule, ...] = ()
     total_score: float = 0.0
     newly_retained: bool = False
+    # either keep_reasons or notes
     keep_reasons: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
 

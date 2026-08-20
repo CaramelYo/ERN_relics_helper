@@ -50,7 +50,7 @@
     "delete_relic": []
   },
   "scan": {
-    "max_relics": 0,
+    "max_relics": 1950,
     "delay_seconds": 0.15,
     "stop_on_duplicate": true,
     "move_after_delete": false

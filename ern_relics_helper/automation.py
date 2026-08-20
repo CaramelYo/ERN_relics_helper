@@ -97,11 +97,12 @@ class GameAutomationAdapter:
         terms = match_terms(terms_text, self.known_terms)
         retained = self._detect_keep_marker(regions)
         unique_id = relic_id(index, kind_text, terms)
-        relic_type, color, mode = parse_kind_text(kind_text)
+        # relic_type, color, mode = parse_kind_text(kind_text)
+        color, mode = parse_kind_text(kind_text)
         return Relic(
             unique_id=unique_id,
             retained=retained,
-            relic_type=relic_type,
+            # relic_type=relic_type,
             color=color,
             mode=mode,
             terms=terms,
@@ -161,8 +162,10 @@ def relic_id(index: int, kind_text: str, terms: tuple[str, ...]) -> str:
     return f"relic-{index + 1:04d}-{digest}"
 
 
-def relic_match_key(relic: Relic) -> tuple[str, tuple[str, ...]]:
-    return (relic.relic_type, tuple(sorted(relic.terms)))
+def relic_match_key(relic: Relic) -> tuple[tuple[str, ...]]:
+# def relic_match_key(relic: Relic) -> tuple[str, tuple[str, ...]]:
+    # return (relic.relic_type, tuple(sorted(relic.terms)))
+    return tuple(sorted(relic.terms))
 
 
 def parse_kind_text(text: str) -> tuple[str, str, str]:
@@ -172,6 +175,7 @@ def parse_kind_text(text: str) -> tuple[str, str, str]:
         if candidate in normalized:
             color = candidate
             break
-    mode = "深夜" if "深夜" in normalized else ("一般" if normalized else "")
+    # mode = "深夜" if "深夜" in normalized else ("一般" if normalized else "")
+    mode = "深夜" if "暗淡" in normalized else "一般"
     return normalized, color, mode
 

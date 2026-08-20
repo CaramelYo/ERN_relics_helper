@@ -57,7 +57,7 @@ python -m ern_relics_helper.cli capture-region --config config/relic-helper.json
 ]
 ```
 
-滑鼠範例：
+~~滑鼠範例：~~
 
 ```json
 [
@@ -69,7 +69,7 @@ python -m ern_relics_helper.cli capture-region --config config/relic-helper.json
 
 支援常見按鍵：`UP`、`DOWN`、`LEFT`、`RIGHT`、`ENTER`、`ESC`、`SPACE`、`TAB`、`DELETE`、`F1` 到 `F24`，以及單一英文字母或數字。
 
-## 建立詞條對照表
+## 建立詞條對照表 (手動，no need)
 
 可從完整來源 Excel 抽出標準格式詞條表：
 
@@ -80,16 +80,16 @@ python -m ern_relics_helper.cli build-terms --source "【艾爾登法環：黑�
 標準詞條表欄位：
 
 - `詞條`
-- `詞條種類`
+~~ - `詞條種類` ~~
 - `疊加`
 - `邏輯判斷`
 - `評分`
 
-`邏輯判斷` 可填入 `特定武器`、`強力`、`不可疊加強力`、`不同級別可疊加強力`、`可疊加強力` 等標籤，多個標籤可用 `；` 分隔。
+`邏輯判斷` 可填入 `1`(特定武器)、`2`(不可疊加強力)、`3`(不同級別可疊加強力)、`4`(可疊加強力) 等標籤~~，多個標籤可用 `；` 分隔~~。
 
 ## 評估多餘遺物
 
-輸入檔需包含 `unique_id`、`保留標記`、`遺物種類`、`詞條1` 到 `詞條6` 等欄位。
+輸入檔需包含 `unique_id`、`保留標記`、~~`遺物種類`~~`遺物顏色`、`遺物模式`、`詞條1` 到 `詞條6` 等欄位。
 
 可先建立範本：
 
@@ -106,7 +106,7 @@ python -m ern_relics_helper.cli evaluate --relics outputs/scan/當前遺物清�
 - `所有遺物狀態.xlsx`
 - `新增保留遺物.xlsx`
 
-## 移除檔案中的保留標記
+## 移除檔案中的保留標記 (???)
 
 ```powershell
 python -m ern_relics_helper.cli clear-marks-file --relics outputs/evaluation/所有遺物狀態.xlsx --output outputs/evaluation/移除保留標記後.xlsx
@@ -128,14 +128,20 @@ python -m ern_relics_helper.cli apply-keep --config config/relic-helper.json --t
 
 刪除未保留遺物：
 
-```powershell
+<!-- ```powershell
 python -m ern_relics_helper.cli delete-unkept --config config/relic-helper.json --terms outputs/relic_terms_table/遺物詞條對照表.xlsx --execute
+``` -->
+```powershell
+python -m ern_relics_helper.cli delete-unkept --config config/relic-helper.json --execute
 ```
 
 移除所有保留標記：
 
-```powershell
+<!-- ```powershell
 python -m ern_relics_helper.cli clear-keeps-game --config config/relic-helper.json --terms outputs/relic_terms_table/遺物詞條對照表.xlsx --execute
+``` -->
+```powershell
+python -m ern_relics_helper.cli clear-keeps-game --config config/relic-helper.json --execute
 ```
 
 `apply-keep`、`delete-unkept`、`clear-keeps-game` 若未加 `--execute`，會執行掃描與比對，但不會送出保留、刪除或移除標記按鍵。
