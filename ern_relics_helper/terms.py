@@ -56,7 +56,8 @@ def write_term_rules(path: str | Path, rules: dict[str, TermRule]) -> None:
             [
                 rule.term,
                 rule.stack_state,
-                "；".join(rule.logic_tags),
+                # "；".join(rule.logic_tags),
+                rule.logic_tags,
                 rule.score,
             ]
         )
@@ -73,7 +74,7 @@ def find_header(sheet) -> tuple[int, dict[str, int]]:
                 aliases["term"] = column_index
             # elif text in CATEGORY_ALIASES or lowered in CATEGORY_ALIASES:
             #     aliases["category"] = column_index
-            elif text in STACK_ALIASES or lowered in STACK_ALIASES or "疊加性" in text:
+            elif text in STACK_ALIASES or lowered in STACK_ALIASES:
                 aliases["stack"] = column_index
             elif text in LOGIC_ALIASES or lowered in LOGIC_ALIASES:
                 aliases["logic"] = column_index

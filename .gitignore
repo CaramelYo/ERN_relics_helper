@@ -24,6 +24,12 @@ MANIFEST
 venv/
 env/
 ENV/
+
+# Root-level virtual environment files
+/Include/
+/Lib/
+/Scripts/
+/pyvenv.cfg
 .env
 .env.*
 !.env.example

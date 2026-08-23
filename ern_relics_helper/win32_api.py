@@ -8,7 +8,76 @@ from dataclasses import dataclass
 from PIL import ImageGrab
 
 
-user32 = ctypes.windll.user32
+user32 = ctypes.WinDLL("user32", use_last_error=True)
+
+KEYEVENTF_EXTENDEDKEY = 0x0001
+KEYEVENTF_KEYUP = 0x0002
+KEYEVENTF_SCANCODE = 0x0008
+INPUT_KEYBOARD = 1
+MAPVK_VK_TO_VSC = 0
+EXTENDED_KEY_CODES = {
+    0x21,  # PAGEUP
+    0x22,  # PAGEDOWN
+    0x23,  # END
+    0x24,  # HOME
+    0x25,  # LEFT
+    0x26,  # UP
+    0x27,  # RIGHT
+    0x28,  # DOWN
+    0x2D,  # INSERT
+    0x2E,  # DELETE
+}
+
+ULONG_PTR = ctypes.c_ulonglong if ctypes.sizeof(ctypes.c_void_p) == 8 else ctypes.c_ulong
+
+
+class KEYBDINPUT(ctypes.Structure):
+    _fields_ = [
+        ("wVk", wintypes.WORD),
+        ("wScan", wintypes.WORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
+
+
+class MOUSEINPUT(ctypes.Structure):
+    _fields_ = [
+        ("dx", wintypes.LONG),
+        ("dy", wintypes.LONG),
+        ("mouseData", wintypes.DWORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
+
+
+class HARDWAREINPUT(ctypes.Structure):
+    _fields_ = [
+        ("uMsg", wintypes.DWORD),
+        ("wParamL", wintypes.WORD),
+        ("wParamH", wintypes.WORD),
+    ]
+
+
+class INPUT_UNION(ctypes.Union):
+    _fields_ = [
+        ("mi", MOUSEINPUT),
+        ("ki", KEYBDINPUT),
+        ("hi", HARDWAREINPUT),
+    ]
+
+
+class INPUT(ctypes.Structure):
+    _anonymous_ = ("input",)
+    _fields_ = [
+        ("type", wintypes.DWORD),
+        ("input", INPUT_UNION),
+    ]
+
+
+user32.SendInput.argtypes = (wintypes.UINT, ctypes.POINTER(INPUT), ctypes.c_int)
+user32.SendInput.restype = wintypes.UINT
 
 
 @dataclass(frozen=True)
@@ -32,6 +101,13 @@ def find_window_by_title(title_contains: str) -> WindowInfo:
     return matches[0]
 
 
+def get_window_rect(hwnd: int) -> tuple[int, int, int, int]:
+    rect = wintypes.RECT()
+    if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+        raise Win32Error("無法取得視窗位置。")
+    return (rect.left, rect.top, rect.right, rect.bottom)
+
+
 def list_windows() -> list[WindowInfo]:
     matches: list[WindowInfo] = []
 
@@ -45,9 +121,7 @@ def list_windows() -> list[WindowInfo]:
         buffer = ctypes.create_unicode_buffer(length + 1)
         user32.GetWindowTextW(hwnd, buffer, length + 1)
         title = buffer.value
-        rect = wintypes.RECT()
-        user32.GetWindowRect(hwnd, ctypes.byref(rect))
-        matches.append(WindowInfo(hwnd=int(hwnd), title=title, rect=(rect.left, rect.top, rect.right, rect.bottom)))
+        matches.append(WindowInfo(hwnd=int(hwnd), title=title, rect=get_window_rect(hwnd)))
         return True
 
     user32.EnumWindows(callback, 0)
@@ -58,6 +132,8 @@ def activate_window(hwnd: int) -> None:
     user32.ShowWindow(hwnd, 5)
     user32.SetForegroundWindow(hwnd)
     time.sleep(0.1)
+    if int(user32.GetForegroundWindow()) != int(hwnd):
+        raise Win32Error("無法將遊戲視窗切到前景，請確認視窗未最小化，且程式權限不低於遊戲權限。")
 
 
 def capture_window_region(window: WindowInfo, region: dict) -> object:
@@ -74,9 +150,13 @@ def capture_window_region(window: WindowInfo, region: dict) -> object:
 
 def send_key(key: str, duration: float = 0.02) -> None:
     virtual_key = virtual_key_code(key)
-    keybd_event(virtual_key, 0)
+    scan_code = user32.MapVirtualKeyW(virtual_key, MAPVK_VK_TO_VSC)
+    flags = KEYEVENTF_SCANCODE
+    if virtual_key in EXTENDED_KEY_CODES:
+        flags |= KEYEVENTF_EXTENDEDKEY
+    keybd_event(0, scan_code, flags)
     time.sleep(duration)
-    keybd_event(virtual_key, 2)
+    keybd_event(0, scan_code, flags | KEYEVENTF_KEYUP)
 
 
 def click(x: int, y: int) -> None:
@@ -87,6 +167,7 @@ def click(x: int, y: int) -> None:
 
 
 def run_action(action: list[dict], window: WindowInfo, delay_seconds: float) -> None:
+    activate_window(window.hwnd)
     for step in action:
         kind = step.get("type", "key")
         if kind == "key":
@@ -131,8 +212,15 @@ def virtual_key_code(key: str) -> int:
     raise Win32Error(f"不支援的按鍵：{key}")
 
 
-def keybd_event(vk: int, flags: int) -> None:
-    user32.keybd_event(vk, 0, flags, 0)
+def keybd_event(vk: int, scan_code: int, flags: int) -> None:
+    input_event = INPUT()
+    input_event.type = INPUT_KEYBOARD
+    input_event.ki = KEYBDINPUT(vk, scan_code, flags, 0, 0)
+    sent = user32.SendInput(1, ctypes.byref(input_event), ctypes.sizeof(INPUT))
+    if sent != 1:
+        error_code = ctypes.get_last_error()
+        error_message = ctypes.FormatError(error_code).strip() if error_code else "Windows 未提供錯誤碼。"
+        raise Win32Error(f"無法送出鍵盤輸入：SendInput 回傳 {sent}，last_error={error_code}，{error_message}")
 
 
 def mouse_event(flags: int) -> None:

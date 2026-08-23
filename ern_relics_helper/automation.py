@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import hashlib
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from .models import Relic
+from .models import RELIC_COLOR_ALIASES, Relic
 from .ocr import marker_color_present, match_terms, run_tesseract
-from .win32_api import Win32Error, activate_window, capture_window_region, find_window_by_title, run_action
+from .win32_api import Win32Error, activate_window, capture_window_region, find_window_by_title, get_window_rect, run_action
 
 
 class AutomationUnavailable(RuntimeError):
     pass
+
+
+RELIC_COLORS = tuple(dict.fromkeys(RELIC_COLOR_ALIASES.values()))
 
 
 @dataclass(frozen=True)
@@ -28,6 +31,7 @@ class GameAutomationAdapter:
         self.execute = execute
         self.window = self._find_window()
         self.delay_seconds = float(config.get("scan", {}).get("delay_seconds", 0.15))
+        self.update_window_rect()
 
     def scan_current_relics(self) -> list[Relic]:
         max_relics = self._max_relics()
@@ -150,6 +154,13 @@ class GameAutomationAdapter:
         except Win32Error as error:
             raise AutomationUnavailable(str(error)) from error
 
+    def update_window_rect(self) -> None:
+        try:
+            activate_window(self.window.hwnd)
+            self.window = replace(self.window, rect=get_window_rect(self.window.hwnd))
+        except Win32Error as error:
+            raise AutomationUnavailable(str(error)) from error
+
     def _max_relics(self) -> int:
         max_relics = int(self.config.get("scan", {}).get("max_relics", 0))
         if max_relics <= 0:
@@ -168,14 +179,10 @@ def relic_match_key(relic: Relic) -> tuple[tuple[str, ...]]:
     return tuple(sorted(relic.terms))
 
 
-def parse_kind_text(text: str) -> tuple[str, str, str]:
+def parse_kind_text(text: str) -> tuple[str, str]:
     normalized = " ".join(text.split())
-    color = ""
-    for candidate in ("紅", "藍", "綠", "黃", "紫", "白", "黑"):
-        if candidate in normalized:
-            color = candidate
-            break
+    color = next((candidate for candidate in RELIC_COLORS if candidate in normalized), "")
     # mode = "深夜" if "深夜" in normalized else ("一般" if normalized else "")
     mode = "深夜" if "暗淡" in normalized else "一般"
-    return normalized, color, mode
-
+    # return normalized, color, mode
+    return color, mode

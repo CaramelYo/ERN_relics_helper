@@ -21,7 +21,8 @@ class EvaluatorTests(unittest.TestCase):
 
     def test_non_stack_power_keeps_highest_scored_relic_only(self):
         rules = {
-            "稀有強力": TermRule(term="稀有強力", stack_state=NON_STACKABLE, logic_tags=("強力",), score=0.1),
+            # "稀有強力": TermRule(term="稀有強力", stack_state=NON_STACKABLE, logic_tags=("強力",), score=0.1),
+            "稀有強力": TermRule(term="稀有強力", stack_state=NON_STACKABLE, logic_tags="強力", score=0.1),
             "補分": TermRule(term="補分", score=0.3),
         }
         relics = [
@@ -38,7 +39,8 @@ class EvaluatorTests(unittest.TestCase):
 
     def test_stackable_power_keeps_top_three(self):
         rules = {
-            "可疊強力": TermRule(term="可疊強力", stack_state=STACKABLE, logic_tags=("強力",), score=0.1),
+            # "可疊強力": TermRule(term="可疊強力", stack_state=STACKABLE, logic_tags=("強力",), score=0.1),
+            "可疊強力": TermRule(term="可疊強力", stack_state=STACKABLE, logic_tags="強力", score=0.1),
             "補分1": TermRule(term="補分1", score=0.1),
             "補分2": TermRule(term="補分2", score=0.2),
             "補分3": TermRule(term="補分3", score=0.3),

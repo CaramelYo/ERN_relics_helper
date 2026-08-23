@@ -4,7 +4,7 @@ from pathlib import Path
 
 from openpyxl import Workbook, load_workbook
 
-from .models import Relic, normalize_text, parse_bool
+from .models import Relic, normalize_relic_color, normalize_text, parse_bool
 
 
 HEADER_ALIASES = {
@@ -39,7 +39,7 @@ def read_relics(path: str | Path, sheet_name: str | None = None) -> list[Relic]:
                     unique_id=unique_id,
                     retained=parse_bool(read_cell(row, headers.get("retained"))),
                     # relic_type=read_cell(row, headers.get("relic_type")),
-                    color=read_cell(row, headers.get("color")),
+                    color=normalize_relic_color(read_cell(row, headers.get("color"))),
                     mode=read_cell(row, headers.get("mode")),
                     terms=tuple(terms[:6]),
                 )
@@ -83,7 +83,7 @@ def write_relics(path: str | Path, relics: list[Relic]) -> None:
                 "是" if relic.retained else "",
                 "是" if relic.newly_retained else "",
                 # relic.relic_type,
-                relic.color,
+                normalize_relic_color(relic.color),
                 relic.mode,
                 *terms,
                 relic.total_score,

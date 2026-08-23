@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
+import unicodedata
 from pathlib import Path
 
 from PIL import Image, ImageOps
@@ -45,7 +46,11 @@ def prepare_for_ocr(image: Image.Image) -> Image.Image:
 
 
 def normalize_ocr_lines(text: str) -> list[str]:
-    return [line.strip() for line in text.replace("\r", "\n").split("\n") if line.strip()]
+    return [
+        normalized
+        for line in text.replace("\r", "\n").split("\n")
+        if (normalized := unicodedata.normalize("NFKC", line).strip())
+    ]
 
 
 def match_terms(ocr_text: str, known_terms: set[str], limit: int = 6) -> tuple[str, ...]:

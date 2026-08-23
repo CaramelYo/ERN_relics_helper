@@ -1,7 +1,7 @@
 {
   "game": {
     "process_name": "",
-    "window_title": "黑夜君臨"
+    "window_title": "ELDEN RING NIGHTREIGN"
   },
   "ocr": {
     "tesseract_cmd": "E:\\Tesseract-OCR\\tesseract.exe",
@@ -10,16 +10,16 @@
   },
   "regions": {
     "relic_kind": {
-      "x": 0,
-      "y": 0,
-      "width": 0,
-      "height": 0
+      "x": 1075,
+      "y": 765,
+      "width": 450,
+      "height": 40
     },
     "relic_terms": {
-      "x": 0,
-      "y": 0,
-      "width": 0,
-      "height": 0
+      "x": 1075,
+      "y": 800,
+      "width": 550,
+      "height": 180
     },
     "relic_grid": {
       "x": 0,
@@ -45,9 +45,19 @@
     "minimum_ratio": 0.02
   },
   "actions": {
-    "move_next": [],
-    "toggle_keep": [],
-    "delete_relic": []
+    "move_next": [
+      {"type": "key", "key": "RIGHT"}
+    ],
+    "toggle_keep": [
+      {"type": "key", "key": "2"}
+    ],
+    "delete_relic": [
+      {"type": "key", "key": "F"},
+      {"type": "wait", "seconds": 0.1},
+      {"type": "key", "key": "3"},
+      {"type": "wait", "seconds": 0.1},
+      {"type": "key", "key": "F"}
+    ]
   },
   "scan": {
     "max_relics": 1950,

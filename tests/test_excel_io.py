@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 from ern_relics_helper.excel_io import read_relics, write_relics
 from ern_relics_helper.models import Relic
@@ -14,8 +14,8 @@ class ExcelIoTests(unittest.TestCase):
             path = Path(tmp) / "relics.xlsx"
             workbook = Workbook()
             sheet = workbook.active
-            sheet.append(["unique_id", "保留標記", "遺物種類", "詞條1", "詞條2"])
-            sheet.append(["abc", "是", "紅色", "生命力＋１", "力氣＋１"])
+            sheet.append(["unique_id", "保留標記", "遺物種類", "顏色", "詞條1", "詞條2"])
+            sheet.append(["abc", "是", "", "紅色", "生命力＋１", "力氣＋１"])
             workbook.save(path)
 
             relics = read_relics(path)
@@ -23,14 +23,20 @@ class ExcelIoTests(unittest.TestCase):
         self.assertEqual(len(relics), 1)
         self.assertEqual(relics[0].unique_id, "abc")
         self.assertTrue(relics[0].retained)
-        self.assertEqual(relics[0].terms, ("生命力＋１", "力氣＋１"))
+        self.assertEqual(relics[0].color, "火燃")
+        self.assertEqual(relics[0].terms, ("生命力+1", "力氣+1"))
 
     def test_write_relics_creates_workbook(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "out.xlsx"
-            write_relics(path, [Relic(unique_id="abc", retained=True, terms=("生命力＋１",), total_score=0.2)])
+            write_relics(path, [Relic(unique_id="abc", retained=True, color="紅色", terms=("生命力＋１",), total_score=0.2)])
 
             self.assertTrue(path.exists())
+            workbook = load_workbook(path, read_only=True, data_only=True)
+            try:
+                self.assertEqual(workbook.active["D2"].value, "火燃")
+            finally:
+                workbook.close()
             relics = read_relics(path)
 
         self.assertEqual(len(relics), 1)
@@ -40,4 +46,3 @@ class ExcelIoTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

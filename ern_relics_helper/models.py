@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass, field, replace
 from typing import Iterable
 
@@ -7,12 +8,31 @@ from typing import Iterable
 STACKABLE = "可疊加"
 TIER_STACKABLE = "不同級別可疊加"
 NON_STACKABLE = "不可疊加"
+RELIC_COLOR_ALIASES = {
+    "紅": "火燃",
+    "紅色": "火燃",
+    "火燃": "火燃",
+    "藍": "水滴",
+    "藍色": "水滴",
+    "水滴": "水滴",
+    "黃": "光耀",
+    "黃色": "光耀",
+    "光耀": "光耀",
+    "綠": "幽靜",
+    "綠色": "幽靜",
+    "幽靜": "幽靜",
+}
 
 
 def normalize_text(value: object) -> str:
     if value is None:
         return ""
-    return str(value).strip()
+    return unicodedata.normalize("NFKC", str(value)).strip()
+
+
+def normalize_relic_color(value: object) -> str:
+    text = normalize_text(value)
+    return RELIC_COLOR_ALIASES.get(text, text)
 
 
 def normalize_stack_state(value: object) -> str:
@@ -23,20 +43,21 @@ def normalize_stack_state(value: object) -> str:
         return TIER_STACKABLE
     if "不可" in text or "不會" in text or "無法" in text:
         return NON_STACKABLE
-    if "可疊加" in text or "相同" in text or "疊加" in text:
+    if "可疊加" in text or "相同" in text:
         return STACKABLE
     return text
 
 
 def parse_tags(value: object) -> tuple[str, ...]:
-    text = normalize_text(value)
-    if not text:
-        return ()
-    separators = [";", "；", ",", "，", "、", "\n", "|", "/"]
-    parts = [text]
-    for sep in separators:
-        parts = [piece for part in parts for piece in part.split(sep)]
-    return tuple(dict.fromkeys(part.strip() for part in parts if part.strip()))
+    # text = normalize_text(value)
+    # if not text:
+    #     return ()
+    # separators = [";", "；", ",", "，", "、", "\n", "|", "/"]
+    # parts = [text]
+    # for sep in separators:
+    #     parts = [piece for part in parts for piece in part.split(sep)]
+    # return tuple(dict.fromkeys(part.strip() for part in parts if part.strip()))
+    return normalize_text(value)
 
 
 def parse_score(value: object, default: float = 0.0) -> float:
@@ -59,12 +80,13 @@ class TermRule:
     term: str
     # category: str = ""
     stack_state: str = ""
-    logic_tags: tuple[str, ...] = ()
+    # logic_tags: tuple[str, ...] = ()
+    logic_tags: str = ""
     score: float = 0.0
 
     def has_tag(self, *needles: str) -> bool:
         # haystack = " ".join((self.term, self.category, self.stack_state, *self.logic_tags))
-        haystack = " ".join((self.term, self.stack_state, *self.logic_tags))
+        haystack = " ".join((self.term, self.stack_state, self.logic_tags))
         return any(needle and needle in haystack for needle in needles)
 
 
@@ -104,4 +126,3 @@ def append_unique(values: Iterable[str], value: str) -> tuple[str, ...]:
     if value and value not in result:
         result.append(value)
     return tuple(result)
-
